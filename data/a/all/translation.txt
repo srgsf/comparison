@@ -1,0 +1,13 @@
+all
+
+determiner
+ɔːl
+весь
+
+pronoun
+ɔl
+всё
+
+adverb
+ɔl
+всецело
