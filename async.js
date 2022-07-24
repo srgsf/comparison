@@ -42,10 +42,11 @@ async function readFirstString(fullPathFile) {
 		const readInterface = readlinePromises.createInterface({
 			input: fs.createReadStream(fullPathFile),
 		});
-		readInterface.on('line', (line) => {
+
+		for await (const line of readInterface) {
 			readInterface.close();
 			return line;
-		});
+		}
 	}
 	return false;
 }
