@@ -20,45 +20,33 @@ const (
 )
 const freqLimit = 798
 
-var baseFolder = filepath.FromSlash("./data/a")
+//var baseFolder = filepath.FromSlash("./data/a")
 
-//var baseFolder = filepath.FromSlash("../data/a")
+var baseFolder = filepath.FromSlash("../data/a")
 
 func main() {
 	start := time.Now()
+	var words []string
+	var procs int = 0
 	files, err := ioutil.ReadDir(baseFolder)
 	if err != nil {
 		log.Fatalf("Unable to read directory %s\r\n", baseFolder)
 	}
 	wordsChan := make(chan string)
-	done := make(chan bool, 1)
-	var words []string
-	go func() {
-		for w := range wordsChan {
-			words = append(words, w)
-		}
-		done <- true
-	}()
-
-	guard := make(chan bool, 1)
-
 	var wg sync.WaitGroup
-	wg.Add(len(files))
 	for _, f := range files {
-		guard <- true
+		wg.Add(1)
+		procs += 1
 		go func(f fs.FileInfo) {
 			defer wg.Done()
-			defer func() { <-guard }()
+
 			freq, err := os.Open(path.Join(baseFolder, f.Name(), freqFile))
 			if err != nil {
 				return
 			}
-			defer func() {
-				_ = freq.Close()
-			}()
 			scanner := bufio.NewScanner(freq)
 			if !scanner.Scan() {
-				return
+				//return
 			}
 			i, err := strconv.Atoi(scanner.Text())
 			if err != nil || freqLimit > i {
@@ -68,9 +56,6 @@ func main() {
 			if err != nil {
 				return
 			}
-			defer func() {
-				_ = trans.Close()
-			}()
 			scanner = bufio.NewScanner(trans)
 			scanner.Split(bufio.ScanWords)
 			word := ""
@@ -79,15 +64,24 @@ func main() {
 			} else {
 				word = f.Name()
 			}
-			fmt.Printf("%s\n", word)
+
+			//word := f.Name()
+			//fmt.Printf("%s\n", word)
 			wordsChan <- word
 		}(f)
 	}
-
+	done := make(chan struct{})
+	go func(channel chan string, done chan struct{}) {
+		for data := range channel {
+			//fmt.Printf("%s\n", data)
+			words = append(words, data)
+		}
+		close(done)
+	}(wordsChan, done)
 	wg.Wait()
 	close(wordsChan)
 	<-done
-	close(done)
+
 	fmt.Printf("selected %d words from %d, took %f seconds\r\n", len(words), len(files),
 		time.Since(start).Seconds())
 
