@@ -1,0 +1,16 @@
+ARG GO_VERSION=1.18.4
+FROM golang:${GO_VERSION}-alpine AS builder
+
+RUN apk update && apk add --no-cache git
+WORKDIR /workspace
+RUN go mod init read_test
+ADD main.go .
+RUN go get -d -v
+RUN GOOS=linux go build -ldflags="-w -s" -o app
+
+FROM scratch
+WORKDIR /opt/goapp
+ADD data ./data
+COPY --from=builder /workspace/app ./app
+
+ENTRYPOINT ["/opt/goapp/app"]
