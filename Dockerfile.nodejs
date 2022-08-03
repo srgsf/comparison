@@ -1,0 +1,9 @@
+ARG NODE_VERSION=18.6.0
+FROM node:${NODE_VERSION}
+
+WORKDIR /opt/jsapp
+
+ADD data ./data
+ADD async.js app.js
+
+ENTRYPOINT ["node","app.js"]
